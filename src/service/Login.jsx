@@ -36,13 +36,19 @@ export default function Login() {
         <div style={{ marginBottom: "32px" }}>
           <h2 style={{ 
             fontSize: "2.5rem",
-            background: "linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            backgroundClip: "text",
-            marginBottom: "8px"
+            marginBottom: "8px",
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '12px'
           }}>
-            🔑 Welcome Back
+            <span>🔑</span>
+            <span style={{
+              background: "linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text"
+            }}>Welcome Back</span>
           </h2>
           <p style={{ color: "var(--text-secondary)", fontSize: "1.1rem" }}>
             Sign in to access your medication tracker

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { medicineAPI } from "../service/api.js";
+import CapsuleIcon from "../components/icons/CapsuleIcon.jsx";
 
 function toHHMM(t) {
   if (!t) return "";
@@ -108,25 +109,29 @@ export default function Medicines() {
       alert('Failed to remove medicine: ' + error.message);
     }
   };
-
   return (
     <div className="fade-in" style={{ display: "grid", gap: "24px" }}>
       <div className="card" style={{ textAlign: "center", padding: "32px" }}>
         <h2 style={{ 
           fontSize: "2.5rem",
-          background: "linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))",
-          WebkitBackgroundClip: "text",
-          WebkitTextFillColor: "transparent",
-          backgroundClip: "text",
-          marginBottom: "8px"
+          marginBottom: "8px",
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '12px'
         }}>
-          💊 Medicine Management
+          <span>💊</span>
+          <span style={{
+            background: "linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            backgroundClip: "text"
+          }}>Medicine Management</span>
         </h2>
         <p style={{ color: "var(--text-secondary)", fontSize: "1.1rem" }}>
           Add and manage your medications with custom schedules
         </p>
       </div>
-
       <div className="card" style={{ padding: "32px" }}>
         <h3 style={{ color: "var(--text-primary)", marginBottom: "24px", fontSize: "1.5rem" }}>
           ➕ Add New Medicine

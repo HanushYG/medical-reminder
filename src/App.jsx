@@ -9,6 +9,14 @@ import { ProtectedRoute, RoleRoute } from "./auth/ProtectedRoutes.jsx";
 import { useAuth } from "./auth/AuthContext.jsx";
 import { Routes, Route, Link, Navigate } from "react-router-dom";
 
+const navLinkStyle = {
+  color: 'white',
+  textDecoration: 'none',
+  padding: '8px 12px',
+  borderRadius: '8px',
+  transition: 'background-color 0.2s ease-in-out',
+};
+
 export default function App() {
   const { user, logout } = useAuth();
 
@@ -50,11 +58,11 @@ export default function App() {
           </Link>
           
           <nav style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-            <Link to="/dashboard">📊 Dashboard</Link>
-            {user?.role !== 'doctor' && <Link to="/medicines">💊 Medicines</Link>}
-            <Link to="/analytics">📈 Analytics</Link>
-            {!user && <Link to="/login">🔑 Login</Link>}
-            {!user && <Link to="/signup">✨ Signup</Link>}
+            <Link to="/dashboard" style={navLinkStyle}>Dashboard</Link>
+            {user?.role !== 'doctor' && <Link to="/medicines" style={navLinkStyle}>Medicines</Link>}
+            <Link to="/analytics" style={navLinkStyle}>Analytics</Link>
+            {!user && <Link to="/login" style={navLinkStyle}>Login</Link>}
+            {!user && <Link to="/signup" style={navLinkStyle}>Signup</Link>}
           </nav>
           
           {user && (
@@ -80,7 +88,7 @@ export default function App() {
                 className="danger"
                 style={{ padding: "8px 16px", fontSize: "14px" }}
               >
-                🚪 Logout
+                Logout
               </button>
             </div>
           )}

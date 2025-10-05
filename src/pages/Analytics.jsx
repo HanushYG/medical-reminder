@@ -69,13 +69,19 @@ export default function Analytics() {
       <div className="card" style={{ textAlign: "center", padding: "32px" }}>
         <h2 style={{ 
           fontSize: "2.5rem",
-          background: "linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))",
-          WebkitBackgroundClip: "text",
-          WebkitTextFillColor: "transparent",
-          backgroundClip: "text",
-          marginBottom: "8px"
+          marginBottom: "8px",
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '12px'
         }}>
-          📈 Analytics Dashboard
+          <span>📈</span>
+          <span style={{
+            background: "linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            backgroundClip: "text"
+          }}>Analytics Dashboard</span>
         </h2>
         <p style={{ color: "var(--text-secondary)", fontSize: "1.1rem" }}>
           Track your medication adherence and health progress
