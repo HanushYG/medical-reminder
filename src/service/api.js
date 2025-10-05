@@ -8,10 +8,16 @@ function getAuthToken() {
 // Helper function to make authenticated requests
 async function apiRequest(endpoint, options = {}) {
   const token = getAuthToken();
+  
+  // Check if token exists before making request
+  if (!token) {
+    throw new Error('Not authenticated');
+  }
+  
   const config = {
     headers: {
       'Content-Type': 'application/json',
-      ...(token && { 'Authorization': `Bearer ${token}` }),
+      'Authorization': `Bearer ${token}`,
       ...options.headers,
     },
     ...options,
@@ -20,8 +26,15 @@ async function apiRequest(endpoint, options = {}) {
   const response = await fetch(`${API_BASE}${endpoint}`, config);
   
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'API request failed');
+    const error = await response.json().catch(() => ({}));
+    const msg = error.error || 'API request failed';
+    
+    // Signal auth issues clearly
+    if (response.status === 401) {
+      throw new Error('Not authenticated');
+    }
+    
+    throw new Error(msg);
   }
   
   return response.json();
@@ -110,4 +123,3 @@ export function saveData(data) {
   // This will be replaced by the actual API calls
   console.log('saveData called with:', data);
 }
-

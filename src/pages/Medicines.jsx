@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { medicineAPI } from "../service/api.js";
 
 function toHHMM(t) {
@@ -10,6 +11,7 @@ function toHHMM(t) {
 }
 
 export default function Medicines() {
+  const navigate = useNavigate();
   const [name, setName] = useState("");
   const [dosage, setDosage] = useState("");
   const [timeInput, setTimeInput] = useState("");
@@ -31,6 +33,15 @@ export default function Medicines() {
       setList(response.medicines || []);
     } catch (error) {
       console.error('Failed to load medicines:', error);
+      
+      // Handle authentication errors
+      if (error.message === 'Not authenticated') {
+        localStorage.removeItem('auth_user');
+        localStorage.removeItem('auth_token');
+        navigate('/login', { replace: true });
+        return;
+      }
+      
       alert('Failed to load medicines: ' + error.message);
     } finally {
       setLoading(false);
@@ -65,6 +76,15 @@ export default function Medicines() {
       alert('Medicine saved successfully!');
     } catch (error) {
       console.error('Failed to save medicine:', error);
+      
+      // Handle authentication errors
+      if (error.message === 'Not authenticated') {
+        localStorage.removeItem('auth_user');
+        localStorage.removeItem('auth_token');
+        navigate('/login', { replace: true });
+        return;
+      }
+      
       alert('Failed to save medicine: ' + error.message);
     }
   };
@@ -76,6 +96,15 @@ export default function Medicines() {
       alert('Medicine removed successfully!');
     } catch (error) {
       console.error('Failed to remove medicine:', error);
+      
+      // Handle authentication errors
+      if (error.message === 'Not authenticated') {
+        localStorage.removeItem('auth_user');
+        localStorage.removeItem('auth_token');
+        navigate('/login', { replace: true });
+        return;
+      }
+      
       alert('Failed to remove medicine: ' + error.message);
     }
   };

@@ -12,6 +12,7 @@ const medicineRoutes = require('./routes/medicines');
 const doseRoutes = require('./routes/doses');
 const analyticsRoutes = require('./routes/analytics');
 const databaseInfoRoutes = require('./routes/database-info');
+const doctorRoutes = require('./routes/doctor');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -30,7 +31,8 @@ app.use(limiter);
 // CORS configuration
 app.use(cors({
   origin: ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174'], // Vite default ports
-  credentials: true
+  credentials: true,
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 // Body parsing middleware
@@ -43,6 +45,7 @@ app.use('/api/medicines', medicineRoutes);
 app.use('/api/doses', doseRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/database', databaseInfoRoutes);
+app.use('/api/doctor', doctorRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

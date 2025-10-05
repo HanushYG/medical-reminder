@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from "react";
-import { loadData } from "../service/storage.js";
+import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { medicineAPI, analyticsAPI } from "../service/api.js";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid } from "recharts";
 
 function dateRange(from, to) {
@@ -14,31 +15,54 @@ function dateRange(from, to) {
 }
 
 export default function Analytics() {
-  const data = loadData();
+  const navigate = useNavigate();
+  const [medicines, setMedicines] = useState([]);
+  const [adherenceData, setAdherenceData] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [from, setFrom] = useState(() => {
     const d = new Date(); d.setDate(d.getDate() - 6); return d.toISOString().slice(0,10);
   });
   const [to, setTo] = useState(() => new Date().toISOString().slice(0,10));
 
-  const series = useMemo(() => {
-    const days = dateRange(from, to);
-    return days.map(day => {
-      const dosesForDay = [];
-      for (const m of data.medicines) {
-        const startOk = !m.startDate || day >= m.startDate;
-        const endOk = !m.endDate || day <= m.endDate;
-        if (!startOk || !endOk) continue;
-        for (const t of m.times) {
-          const id = `${day}|${m.id}|${t}`;
-          const rec = data.doses.find(d => d.id === id);
-          dosesForDay.push(rec?.status === "Taken" ? "Taken" : "Missed");
-        }
+  // Load analytics data from API
+  useEffect(() => {
+    loadAnalytics();
+  }, [from, to]);
+
+  const loadAnalytics = async () => {
+    try {
+      setLoading(true);
+      const [medicinesResponse, adherenceResponse] = await Promise.all([
+        medicineAPI.getAll(),
+        analyticsAPI.getAdherence(from, to)
+      ]);
+      setMedicines(medicinesResponse.medicines || []);
+      setAdherenceData(adherenceResponse);
+    } catch (error) {
+      console.error('Failed to load analytics:', error);
+      
+      // Handle authentication errors
+      if (error.message === 'Not authenticated') {
+        localStorage.removeItem('auth_user');
+        localStorage.removeItem('auth_token');
+        navigate('/login', { replace: true });
+        return;
       }
-      const taken = dosesForDay.filter(s => s === "Taken").length;
-      const missed = dosesForDay.filter(s => s === "Missed").length;
-      return { date: day, Taken: taken, Missed: missed };
-    });
-  }, [from, to, data]);
+      
+      alert('Failed to load analytics: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const series = useMemo(() => {
+    if (!adherenceData || !adherenceData.daily) return [];
+    return adherenceData.daily.map(day => ({
+      date: day.date,
+      Taken: day.taken || 0,
+      Missed: day.missed || 0
+    }));
+  }, [adherenceData]);
 
   return (
     <div className="fade-in" style={{ display: "grid", gap: "24px" }}>

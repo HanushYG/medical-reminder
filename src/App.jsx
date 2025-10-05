@@ -1,8 +1,10 @@
 import Login from "./service/Login.jsx";
 import Signup from "./pages/Signup.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
+import DoctorDashboard from "./pages/DoctorDashboard.jsx";
 import Medicines from "./pages/Medicines.jsx";
 import Analytics from "./pages/Analytics.jsx";
+import Logo from "./components/Logo.jsx";
 import { ProtectedRoute, RoleRoute } from "./auth/ProtectedRoutes.jsx";
 import { useAuth } from "./auth/AuthContext.jsx";
 import { Routes, Route, Link, Navigate } from "react-router-dom";
@@ -33,7 +35,8 @@ export default function App() {
           justifyContent: "space-between", 
           alignItems: "center" 
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <Link to="/" style={{ display: "flex", alignItems: "center", gap: "12px", textDecoration: "none" }}>
+            <Logo size={36} />
             <h1 style={{ 
               fontSize: "1.8rem", 
               margin: 0,
@@ -42,13 +45,13 @@ export default function App() {
               WebkitTextFillColor: "transparent",
               backgroundClip: "text"
             }}>
-              💊 MedTracker
+              MedTracker
             </h1>
-          </div>
+          </Link>
           
           <nav style={{ display: "flex", gap: "8px", alignItems: "center" }}>
             <Link to="/dashboard">📊 Dashboard</Link>
-            <Link to="/medicines">💊 Medicines</Link>
+            {user?.role !== 'doctor' && <Link to="/medicines">💊 Medicines</Link>}
             <Link to="/analytics">📈 Analytics</Link>
             {!user && <Link to="/login">🔑 Login</Link>}
             {!user && <Link to="/signup">✨ Signup</Link>}
@@ -96,8 +99,17 @@ export default function App() {
           <Route path="/signup" element={<Signup />} />
 
           <Route element={<ProtectedRoute />}>
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/medicines" element={<Medicines />} />
+            <Route 
+              path="/dashboard" 
+              element={
+                user?.role === 'doctor' ? <DoctorDashboard /> : <Dashboard />
+              } 
+            />
+            <Route path="/medicines" element={
+              <RoleRoute allowed={["patient", "caregiver"]}>
+                <Medicines />
+              </RoleRoute>
+            } />
             <Route
               path="/analytics"
               element={

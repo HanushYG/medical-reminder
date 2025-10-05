@@ -141,4 +141,3 @@ node test-connection.js
 4. **Check Atlas:** You'll see your data immediately!
 
 The issue is definitely with authentication - once we get the right credentials, everything will work perfectly! 🎉
-

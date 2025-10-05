@@ -93,14 +93,16 @@ const medicineSchema = new mongoose.Schema({
 });
 
 // Indexes
-medicineSchema.index({ userId: 1 });
 medicineSchema.index({ userId: 1, isActive: 1 });
 medicineSchema.index({ name: 'text', description: 'text' });
 
 // Virtual for next dose time
 medicineSchema.virtual('nextDoseTime').get(function() {
+  if (!this.times || !Array.isArray(this.times) || this.times.length === 0) {
+    return null;
+  }
+  
   const now = new Date();
-  const today = now.toISOString().split('T')[0];
   
   for (const time of this.times) {
     const [hours, minutes] = time.split(':').map(Number);
@@ -117,24 +119,8 @@ medicineSchema.virtual('nextDoseTime').get(function() {
   tomorrow.setDate(tomorrow.getDate() + 1);
   const [hours, minutes] = this.times[0].split(':').map(Number);
   tomorrow.setHours(hours, minutes, 0, 0);
-  
   return tomorrow;
 });
-
-// Instance methods
-medicineSchema.methods.isScheduledForDate = function(date) {
-  const targetDate = new Date(date);
-  const startDate = new Date(this.schedule.startDate);
-  const endDate = this.schedule.endDate ? new Date(this.schedule.endDate) : null;
-  
-  if (targetDate < startDate) return false;
-  if (endDate && targetDate > endDate) return false;
-  
-  // Check if medicine is active on this date
-  if (!this.isActive) return false;
-  
-  return true;
-};
 
 // Static methods
 medicineSchema.statics.findByUser = function(userId) {
@@ -154,4 +140,3 @@ medicineSchema.statics.findByDateRange = function(userId, startDate, endDate) {
 };
 
 module.exports = mongoose.model('Medicine', medicineSchema);
-

@@ -7,14 +7,16 @@ export default function Login() {
   const nav = useNavigate();
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("patient");
+  const [error, setError] = useState("");
 
   const onSubmit = async (e) => {
     e.preventDefault();
+    setError("");
     const result = await login(email, role);
     if (result.success) {
       nav("/dashboard");
     } else {
-      alert(`Login failed: ${result.error}`);
+      setError(result.error);
     }
   };
 
@@ -79,7 +81,6 @@ export default function Login() {
             </label>
             <select value={role} onChange={(e) => setRole(e.target.value)}>
               <option value="patient">👤 Patient</option>
-              <option value="caregiver">👨‍👩‍👧‍👦 Caregiver</option>
               <option value="doctor">👩‍⚕️ Doctor</option>
             </select>
           </div>
@@ -92,6 +93,47 @@ export default function Login() {
           }}>
             🚀 Sign In
           </button>
+          
+          {error && (
+            <div style={{ 
+              padding: "16px", 
+              background: "rgba(255, 107, 107, 0.1)", 
+              borderRadius: "8px",
+              border: "1px solid var(--accent-danger)",
+              textAlign: "center"
+            }}>
+              <p style={{ 
+                color: "var(--accent-danger)", 
+                fontSize: "1rem",
+                fontWeight: "600",
+                margin: "0 0 12px 0"
+              }}>
+                ❌ {error}
+              </p>
+              {error.toLowerCase().includes('invalid credentials') && (
+                <div>
+                  <p style={{ 
+                    color: "var(--text-secondary)", 
+                    fontSize: "0.9rem",
+                    margin: "0 0 12px 0"
+                  }}>
+                    No account found with this email and role.
+                  </p>
+                  <button 
+                    type="button"
+                    onClick={() => nav('/signup')}
+                    className="primary"
+                    style={{ 
+                      padding: "12px 24px",
+                      fontSize: "1rem"
+                    }}
+                  >
+                    ✨ Create Account
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
           
           <div style={{ 
             padding: "16px", 

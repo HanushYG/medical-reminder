@@ -57,7 +57,7 @@ router.get('/date/:date', async (req, res) => {
           dosage: medicine.dosage,
           time: time,
           status: existingDose ? existingDose.status : 'scheduled',
-          takenAt: existingDose ? existingDose.takenAt : null
+          timestamp: existingDose ? existingDose.takenAt : null
         });
       }
     }
@@ -101,24 +101,23 @@ router.get('/history', async (req, res) => {
 
 // Update dose status
 router.put('/:id', [
-  body('status').isIn(['Taken', 'taken', 'Not taken', 'not taken', 'Missed', 'missed']),
-  body('timestamp').optional().isISO8601()
+  body('status').isIn(['taken', 'missed', 'skipped', 'scheduled']),
+  body('timestamp').optional({ checkFalsy: true }).isISO8601()
 ], async (req, res) => {
   try {
+    console.log('Update dose request:', {
+      doseId: req.params.id,
+      body: req.body
+    });
+    
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('Validation errors:', errors.array());
       return res.status(400).json({ errors: errors.array() });
     }
 
-    let { status } = req.body;
+    const { status } = req.body;
     const doseId = req.params.id;
-    
-    // Normalize status values to lowercase for consistency
-    status = status.toLowerCase();
-    if (status === 'not taken') status = 'not taken';
-    else if (status === 'taken') status = 'taken';
-    else if (status === 'missed') status = 'missed';
-    
     const timestamp = req.body.timestamp || (status === 'taken' ? new Date().toISOString() : null);
 
     // Parse dose ID to get date, medicine_id, and time
@@ -154,8 +153,6 @@ router.put('/:id', [
       existingDose.status = status;
       if (status === 'taken') {
         existingDose.takenAt = new Date(timestamp);
-      } else {
-        existingDose.takenAt = undefined;
       }
       await existingDose.save();
       dose = existingDose;
@@ -187,7 +184,7 @@ router.put('/:id', [
 router.put('/bulk/:date', [
   body('doses').isArray(),
   body('doses.*.id').notEmpty(),
-  body('doses.*.status').isIn(['Taken', 'taken', 'Not taken', 'not taken', 'Missed', 'missed'])
+  body('doses.*.status').isIn(['taken', 'missed', 'skipped', 'scheduled'])
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -207,7 +204,7 @@ router.put('/bulk/:date', [
 
     for (const doseUpdate of doses) {
       const { id, status } = doseUpdate;
-      const timestamp = status === 'Taken' ? new Date().toISOString() : null;
+      const timestamp = status === 'taken' ? new Date().toISOString() : null;
 
       // Parse dose ID
       const parts = id.split('|');

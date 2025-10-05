@@ -89,4 +89,3 @@ async function viewDatabase() {
 
 // Run the script
 viewDatabase();
-

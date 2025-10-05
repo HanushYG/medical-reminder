@@ -223,4 +223,3 @@ db.doses.aggregate([
 - [Mongoose Documentation](https://mongoosejs.com/docs/)
 - [MongoDB Atlas Documentation](https://docs.atlas.mongodb.com/)
 - [MongoDB University](https://university.mongodb.com/)
-

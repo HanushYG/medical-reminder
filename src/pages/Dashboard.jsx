@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { medicineAPI, doseAPI } from "../service/api.js";
 
 function todayISO() {
@@ -7,6 +8,7 @@ function todayISO() {
 }
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [medicines, setMedicines] = useState([]);
   const [doses, setDoses] = useState([]);
   const [date, setDate] = useState(todayISO());
@@ -29,6 +31,15 @@ export default function Dashboard() {
       setDoses(dosesResponse.doses || []);
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
+      
+      // Handle authentication errors
+      if (error.message === 'Not authenticated') {
+        localStorage.removeItem('auth_user');
+        localStorage.removeItem('auth_token');
+        navigate('/login', { replace: true });
+        return;
+      }
+      
       alert('Failed to load dashboard data: ' + error.message);
     } finally {
       setLoading(false);
@@ -66,7 +77,7 @@ export default function Dashboard() {
 
   const toggle = async (dose) => {
     try {
-      const newStatus = dose.status === "taken" ? "not taken" : "taken";
+      const newStatus = dose.status === "taken" ? "missed" : "taken";
       const timestamp = newStatus === "taken" ? new Date().toISOString() : null;
       
       await doseAPI.updateStatus(dose.id, newStatus, timestamp);
@@ -75,6 +86,15 @@ export default function Dashboard() {
       await loadDashboardData();
     } catch (error) {
       console.error('Failed to update dose status:', error);
+      
+      // Handle authentication errors
+      if (error.message === 'Not authenticated') {
+        localStorage.removeItem('auth_user');
+        localStorage.removeItem('auth_token');
+        navigate('/login', { replace: true });
+        return;
+      }
+      
       alert('Failed to update dose status: ' + error.message);
     }
   };
@@ -214,8 +234,8 @@ export default function Dashboard() {
                     borderRadius: "20px",
                     fontSize: "0.8rem",
                     fontWeight: "600",
-                    background: d.status === "taken" ? "var(--accent-success)" : "var(--accent-warning)",
-                    color: d.status === "taken" ? "var(--bg-primary)" : "var(--text-primary)"
+                    background: d.status === "taken" ? "var(--accent-success)" : d.status === "missed" ? "var(--accent-danger)" : "var(--accent-warning)",
+                    color: "var(--bg-primary)"
                   }}>
                     {d.status}
                   </span>
@@ -229,7 +249,7 @@ export default function Dashboard() {
                       minWidth: "120px"
                     }}
                   >
-                    {d.status === "taken" ? "❌ Mark Not taken" : "✅ Mark Taken"}
+                    {d.status === "taken" ? "❌ Mark Missed" : "✅ Mark Taken"}
                   </button>
                   
                   {d.ts && (

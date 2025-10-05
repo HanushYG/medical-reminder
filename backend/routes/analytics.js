@@ -33,44 +33,44 @@ router.get('/adherence', requireRole(['patient', 'caregiver', 'doctor']), async 
     }
 
     // Get all medicines for the user
-    const medicines = await dbAll(
-      'SELECT * FROM medicines WHERE user_id = ?',
-      [req.user.id]
-    );
+    const medicines = await Medicine.find({
+      userId: req.user.id,
+      isActive: true
+    });
 
-    const analytics = [];
+    const daily = [];
 
-    for (const date of dates) {
-      const dayData = { date, Taken: 0, Missed: 0 };
+    for (const dateStr of dates) {
+      const dayData = { date: dateStr, taken: 0, missed: 0 };
+      const targetDate = new Date(dateStr);
 
       for (const medicine of medicines) {
-        const times = JSON.parse(medicine.times);
-        const startOk = !medicine.start_date || date >= medicine.start_date;
-        const endOk = !medicine.end_date || date <= medicine.end_date;
+        const startOk = !medicine.schedule.startDate || targetDate >= new Date(medicine.schedule.startDate);
+        const endOk = !medicine.schedule.endDate || targetDate <= new Date(medicine.schedule.endDate);
 
         if (!startOk || !endOk) continue;
 
-        for (const time of times) {
-          const doseId = `${date}|${medicine.id}|${time}`;
-          
+        for (const time of medicine.times) {
           // Check if dose was taken
-          const dose = await dbAll(
-            'SELECT status FROM doses WHERE id = ?',
-            [doseId]
-          );
+          const dose = await Dose.findOne({
+            userId: req.user.id,
+            medicineId: medicine._id,
+            date: targetDate,
+            time: time
+          });
 
-          if (dose.length > 0 && dose[0].status === 'Taken') {
-            dayData.Taken++;
+          if (dose && dose.status === 'taken') {
+            dayData.taken++;
           } else {
-            dayData.Missed++;
+            dayData.missed++;
           }
         }
       }
 
-      analytics.push(dayData);
+      daily.push(dayData);
     }
 
-    res.json({ analytics });
+    res.json({ daily });
   } catch (error) {
     console.error('Get adherence analytics error:', error);
     res.status(500).json({ error: 'Failed to fetch adherence analytics' });

@@ -33,4 +33,3 @@ rl.question('Enter your MongoDB Atlas password: ', (password) => {
   
   rl.close();
 });
-
