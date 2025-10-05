@@ -1,0 +1,17 @@
+:root {
+  color-scheme: light dark;
+  --bg: #ffffff;
+  --fg: #222;
+  --muted: #666;
+  --brand: #2563eb;
+  --ok: #16a34a;
+  --warn: #dc2626;
+}
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; }
+body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Arial, Helvetica, sans-serif; background: var(--bg); color: var(--fg); }
+a { color: var(--brand); text-decoration: none; }
+a:hover { text-decoration: underline; }
+button { padding: 6px 10px; cursor: pointer; }
+input, select { padding: 6px 8px; }
+ul { margin: 0; padding-left: 20px; }
