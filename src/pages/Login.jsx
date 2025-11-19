@@ -2,10 +2,9 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext.jsx";
 
-export default function Signup() {
-  const { signup } = useAuth();
+export default function Login() {
+  const { login } = useAuth();
   const nav = useNavigate();
-  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("patient");
   const [error, setError] = useState("");
@@ -13,7 +12,7 @@ export default function Signup() {
   const onSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    const result = await signup(email, role, name);
+    const result = await login(email, role);
     if (result.success) {
       nav("/dashboard");
     } else {
@@ -43,39 +42,20 @@ export default function Signup() {
             justifyContent: 'center',
             gap: '12px'
           }}>
-            <span>✨</span>
+            <span>🔑</span>
             <span style={{
               background: "linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
               backgroundClip: "text"
-            }}>Join MedTracker</span>
+            }}>Welcome Back</span>
           </h2>
           <p style={{ color: "var(--text-secondary)", fontSize: "1.1rem" }}>
-            Create your account to start tracking your medications
+            Sign in to access your medication tracker
           </p>
         </div>
 
         <form onSubmit={onSubmit} style={{ display: "grid", gap: "24px" }}>
-          <div>
-            <label style={{ 
-              display: "block", 
-              color: "var(--text-primary)", 
-              marginBottom: "8px", 
-              fontWeight: "500",
-              textAlign: "left"
-            }}>
-              👤 Full Name
-            </label>
-            <input 
-              type="text"
-              placeholder="Enter your full name" 
-              value={name} 
-              onChange={(e) => setName(e.target.value)} 
-              required 
-            />
-          </div>
-          
           <div>
             <label style={{ 
               display: "block", 
@@ -103,11 +83,11 @@ export default function Signup() {
               fontWeight: "500",
               textAlign: "left"
             }}>
-              👤 Select Your Role
+              👤 Role
             </label>
             <select value={role} onChange={(e) => setRole(e.target.value)}>
-              <option value="patient">👤 Patient - Track your own medications</option>
-              <option value="doctor">👩‍⚕️ Doctor - Monitor patient adherence</option>
+              <option value="patient">👤 Patient</option>
+              <option value="doctor">👩‍⚕️ Doctor</option>
             </select>
           </div>
           
@@ -117,7 +97,7 @@ export default function Signup() {
             fontWeight: "600",
             marginTop: "8px"
           }}>
-            🎉 Create Account
+            🚀 Sign In
           </button>
           
           {error && (
@@ -136,25 +116,25 @@ export default function Signup() {
               }}>
                 ❌ {error}
               </p>
-              {error.toLowerCase().includes('already exists') && (
+              {error.toLowerCase().includes('invalid credentials') && (
                 <div>
                   <p style={{ 
                     color: "var(--text-secondary)", 
                     fontSize: "0.9rem",
                     margin: "0 0 12px 0"
                   }}>
-                    An account with this email already exists.
+                    No account found with this email and role.
                   </p>
                   <button 
                     type="button"
-                    onClick={() => nav('/login')}
+                    onClick={() => nav('/signup')}
                     className="primary"
                     style={{ 
                       padding: "12px 24px",
                       fontSize: "1rem"
                     }}
                   >
-                    🔑 Go to Login
+                    ✨ Create Account
                   </button>
                 </div>
               )}
@@ -172,7 +152,7 @@ export default function Signup() {
               fontSize: "0.9rem",
               margin: 0
             }}>
-              💡 <strong>Quick Setup:</strong> Just enter your email and role to get started instantly
+              💡 <strong>Demo Mode:</strong> No password required for this demonstration
             </p>
           </div>
         </form>

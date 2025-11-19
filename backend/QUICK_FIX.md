@@ -50,3 +50,5 @@ After fixing the password:
 - **Collections**: users, medicines, doses
 
 The app will automatically create these collections when you start using it!
+
+

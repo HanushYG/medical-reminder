@@ -141,4 +141,165 @@ router.get('/patients/:patientId/adherence', async (req, res) => {
   }
 });
 
+// Get aggregated analytics for all patients
+router.get('/analytics/all-patients', async (req, res) => {
+  try {
+    const { from, to } = req.query;
+
+    if (!from || !to) {
+      return res.status(400).json({ error: 'from and to date parameters are required' });
+    }
+
+    // Validate date formats
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(to)) {
+      return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD' });
+    }
+
+    const startDate = new Date(from);
+    startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(to);
+    endDate.setHours(23, 59, 59, 999);
+
+    console.log('Fetching analytics from', startDate, 'to', endDate);
+
+    // Get all patients
+    const patients = await User.find({
+      role: { $in: ['patient', 'caregiver'] },
+      isActive: true
+    });
+
+    console.log(`Found ${patients.length} patients`);
+
+    if (patients.length === 0) {
+      return res.json({ 
+        daily: [],
+        patientBreakdown: [],
+        totalPatients: 0
+      });
+    }
+
+    // Get all doses for all patients in the date range using aggregation
+    const dosesByDate = await Dose.aggregate([
+      {
+        $match: {
+          userId: { $in: patients.map(p => p._id) },
+          date: { $gte: startDate, $lte: endDate }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            date: { $dateToString: { format: '%Y-%m-%d', date: '$date' } },
+            status: '$status'
+          },
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { '_id.date': 1 }
+      }
+    ]);
+
+    console.log(`Found ${dosesByDate.length} dose aggregations`);
+
+    // Get doses by patient
+    const dosesByPatient = await Dose.aggregate([
+      {
+        $match: {
+          userId: { $in: patients.map(p => p._id) },
+          date: { $gte: startDate, $lte: endDate }
+        }
+      },
+      {
+        $group: {
+          _id: {
+            userId: '$userId',
+            status: '$status'
+          },
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    console.log(`Found ${dosesByPatient.length} patient dose aggregations`);
+
+    // Generate date range
+    const dates = [];
+    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+      dates.push(d.toISOString().slice(0, 10));
+    }
+
+    // Build daily data
+    const dailyMap = {};
+    dates.forEach(date => {
+      dailyMap[date] = { date, taken: 0, missed: 0 };
+    });
+
+    dosesByDate.forEach(item => {
+      const date = item._id.date;
+      const status = item._id.status;
+      const count = item.count;
+
+      if (dailyMap[date]) {
+        if (status === 'taken') {
+          dailyMap[date].taken = count;
+        } else if (status === 'missed') {
+          dailyMap[date].missed = count;
+        }
+      }
+    });
+
+    const daily = dates.map(date => dailyMap[date]);
+
+    // Build patient breakdown
+    const patientDoseMap = {};
+    patients.forEach(patient => {
+      patientDoseMap[patient._id.toString()] = {
+        patientId: patient._id,
+        patientName: patient.fullName || patient.email,
+        patientEmail: patient.email,
+        taken: 0,
+        missed: 0,
+        total: 0,
+        adherenceRate: 0
+      };
+    });
+
+    dosesByPatient.forEach(item => {
+      const userId = item._id.userId.toString();
+      const status = item._id.status;
+      const count = item.count;
+
+      if (patientDoseMap[userId]) {
+        if (status === 'taken') {
+          patientDoseMap[userId].taken = count;
+        } else if (status === 'missed') {
+          patientDoseMap[userId].missed = count;
+        }
+      }
+    });
+
+    // Calculate totals and adherence rates
+    const patientBreakdown = Object.values(patientDoseMap).map(patient => {
+      patient.total = patient.taken + patient.missed;
+      patient.adherenceRate = patient.total > 0 
+        ? parseFloat(((patient.taken / patient.total) * 100).toFixed(2))
+        : 0;
+      return patient;
+    }).filter(patient => patient.total > 0); // Only include patients with data
+
+    console.log(`Returning ${daily.length} days and ${patientBreakdown.length} patients with data`);
+
+    res.json({ 
+      daily,
+      patientBreakdown,
+      totalPatients: patients.length
+    });
+  } catch (error) {
+    console.error('Get all patients analytics error:', error);
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ error: 'Failed to fetch analytics for all patients' });
+  }
+});
+
 module.exports = router;

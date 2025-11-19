@@ -1,7 +1,4 @@
-
-
-
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
 
 const AuthContext = createContext(null);
 
@@ -16,56 +13,116 @@ export function AuthProvider({ children }) {
     else localStorage.removeItem("auth_user");
   }, [user]);
 
-  const login = async (email, role = "patient") => {
+  const login = useCallback(async (email, role = "patient") => {
     try {
-      const response = await fetch('http://localhost:5000/api/auth/login', {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5002';
+      console.log('Attempting login to:', `${API_URL}/api/auth/login`);
+      
+      const response = await fetch(`${API_URL}/api/auth/login`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        credentials: 'include',
         body: JSON.stringify({ email, role })
       });
       
-      if (response.ok) {
-        const data = await response.json();
+      console.log('Login response status:', response.status);
+      
+      if (!response.ok) {
+        let errorData;
+        try {
+          errorData = await response.json();
+          console.error('Login error response:', errorData);
+        } catch (e) {
+          console.error('Failed to parse error response:', e);
+          errorData = { error: 'Invalid server response' };
+        }
+        return { 
+          success: false, 
+          error: errorData.error || `Login failed with status ${response.status}` 
+        };
+      }
+      
+      const data = await response.json();
+      console.log('Login successful, user data:', data);
+      
+      if (data.user && data.token) {
         setUser(data.user);
         localStorage.setItem('auth_token', data.token);
         return { success: true };
       } else {
-        const error = await response.json();
-        return { success: false, error: error.error };
+        console.error('Invalid response format - missing user or token');
+        return { success: false, error: 'Invalid server response format' };
       }
     } catch (error) {
-      return { success: false, error: 'Network error' };
+      console.error('Login exception:', error);
+      return { 
+        success: false, 
+        error: error.message || 'Network error. Please check your connection.' 
+      };
     }
-  };
+  }, []);
 
-  const signup = async (email, role = "patient") => {
+  const signup = useCallback(async (email, role = "patient", name = "") => {
     try {
-      const response = await fetch('http://localhost:5000/api/auth/signup', {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5002';
+      console.log('Attempting signup at:', `${API_URL}/api/auth/signup`);
+      
+      const response = await fetch(`${API_URL}/api/auth/signup`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, role })
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({ email, role, name })
       });
       
-      if (response.ok) {
-        const data = await response.json();
+      console.log('Signup response status:', response.status);
+      
+      if (!response.ok) {
+        let errorData;
+        try {
+          errorData = await response.json();
+          console.error('Signup error response:', errorData);
+        } catch (e) {
+          console.error('Failed to parse error response:', e);
+          errorData = { error: 'Invalid server response' };
+        }
+        return { 
+          success: false, 
+          error: errorData.error || `Signup failed with status ${response.status}` 
+        };
+      }
+      
+      const data = await response.json();
+      console.log('Signup successful, user data:', data);
+      
+      if (data.user && data.token) {
         setUser(data.user);
         localStorage.setItem('auth_token', data.token);
         return { success: true };
       } else {
-        const error = await response.json();
-        return { success: false, error: error.error };
+        console.error('Invalid response format - missing user or token');
+        return { success: false, error: 'Invalid server response format' };
       }
     } catch (error) {
-      return { success: false, error: 'Network error' };
+      console.error('Signup exception:', error);
+      return { 
+        success: false, 
+        error: error.message || 'Network error. Please check your connection.' 
+      };
     }
-  };
+  }, []);
 
   const logout = () => {
     setUser(null);
     localStorage.removeItem('auth_token');
   };
 
-  const value = useMemo(() => ({ user, login, signup, logout }), [user]);
+  const value = useMemo(() => ({ user, login, signup, logout }), [user, login, signup]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

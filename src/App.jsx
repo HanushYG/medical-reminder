@@ -1,4 +1,4 @@
-import Login from "./service/Login.jsx";
+import Login from "./pages/Login.jsx";
 import Signup from "./pages/Signup.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import DoctorDashboard from "./pages/DoctorDashboard.jsx";

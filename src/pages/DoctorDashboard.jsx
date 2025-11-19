@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 
-const API_BASE = 'http://localhost:5000/api';
+const API_BASE = `${import.meta.env.VITE_API_URL || 'http://localhost:5002'}/api`;
 
 function getAuthToken() {
   return localStorage.getItem('auth_token');
@@ -46,6 +46,12 @@ export default function DoctorDashboard() {
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [patientMedicines, setPatientMedicines] = useState([]);
   const [patientDoses, setPatientDoses] = useState([]);
+  
+  // Get doctor name from localStorage
+  const doctorName = useMemo(() => {
+    const user = JSON.parse(localStorage.getItem('auth_user') || '{}');
+    return user.name || 'Doctor';
+  }, []);
 
   useEffect(() => {
     loadPatients();
@@ -108,6 +114,30 @@ export default function DoctorDashboard() {
 
   return (
     <div className="fade-in" style={{ display: "grid", gap: "24px" }}>
+      {/* Welcome Message */}
+      <div className="card" style={{ 
+        padding: "24px 32px",
+        background: "linear-gradient(135deg, rgba(0, 212, 170, 0.1), rgba(72, 219, 251, 0.1))",
+        border: "1px solid var(--accent-primary)"
+      }}>
+        <h2 style={{ 
+          fontSize: "2rem",
+          color: "var(--text-primary)",
+          margin: "0 0 8px 0",
+          fontWeight: "600"
+        }}>
+          👋 Welcome, <span style={{
+            background: "linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            backgroundClip: "text"
+          }}>Dr. {doctorName}</span>!
+        </h2>
+        <p style={{ color: "var(--text-secondary)", fontSize: "1rem", margin: 0 }}>
+          Monitor and manage your patients' medication adherence
+        </p>
+      </div>
+
       <div className="card" style={{ textAlign: "center", padding: "32px" }}>
         <div style={{ 
           display: "flex", 

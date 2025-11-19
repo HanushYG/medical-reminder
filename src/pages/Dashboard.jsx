@@ -14,6 +14,12 @@ export default function Dashboard() {
   const [date, setDate] = useState(todayISO());
   const [filter, setFilter] = useState("all"); // all | taken | not
   const [loading, setLoading] = useState(true);
+  
+  // Get user name from localStorage
+  const userName = useMemo(() => {
+    const user = JSON.parse(localStorage.getItem('auth_user') || '{}');
+    return user.name || 'User';
+  }, []);
 
   // Load medicines and doses from API
   useEffect(() => {
@@ -104,6 +110,30 @@ export default function Dashboard() {
 
   return (
     <div className="fade-in" style={{ display: "grid", gap: "24px" }}>
+      {/* Welcome Message */}
+      <div className="card" style={{ 
+        padding: "24px 32px",
+        background: "linear-gradient(135deg, rgba(0, 212, 170, 0.1), rgba(72, 219, 251, 0.1))",
+        border: "1px solid var(--accent-primary)"
+      }}>
+        <h2 style={{ 
+          fontSize: "2rem",
+          color: "var(--text-primary)",
+          margin: "0 0 8px 0",
+          fontWeight: "600"
+        }}>
+          👋 Welcome back, <span style={{
+            background: "linear-gradient(135deg, var(--accent-primary), var(--accent-secondary))",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            backgroundClip: "text"
+          }}>{userName}</span>!
+        </h2>
+        <p style={{ color: "var(--text-secondary)", fontSize: "1rem", margin: 0 }}>
+          Let's keep track of your medications today
+        </p>
+      </div>
+
       <div className="card" style={{ textAlign: "center", padding: "32px" }}>
         <div style={{ 
           display: "flex", 

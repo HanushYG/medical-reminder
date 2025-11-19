@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { medicineAPI, analyticsAPI } from "../service/api.js";
+import { medicineAPI, analyticsAPI, doctorAPI } from "../service/api.js";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid } from "recharts";
 
 function dateRange(from, to) {
@@ -18,26 +18,46 @@ export default function Analytics() {
   const navigate = useNavigate();
   const [medicines, setMedicines] = useState([]);
   const [adherenceData, setAdherenceData] = useState(null);
+  const [patientBreakdown, setPatientBreakdown] = useState([]);
+  const [totalPatients, setTotalPatients] = useState(0);
   const [loading, setLoading] = useState(true);
   const [from, setFrom] = useState(() => {
     const d = new Date(); d.setDate(d.getDate() - 6); return d.toISOString().slice(0,10);
   });
   const [to, setTo] = useState(() => new Date().toISOString().slice(0,10));
 
+  // Check if user is a doctor
+  const userRole = useMemo(() => {
+    const user = JSON.parse(localStorage.getItem('auth_user') || '{}');
+    return user.role;
+  }, []);
+
+  const isDoctor = userRole === 'doctor';
+
   // Load analytics data from API
   useEffect(() => {
     loadAnalytics();
-  }, [from, to]);
+  }, [from, to, isDoctor]);
 
   const loadAnalytics = async () => {
     try {
       setLoading(true);
-      const [medicinesResponse, adherenceResponse] = await Promise.all([
-        medicineAPI.getAll(),
-        analyticsAPI.getAdherence(from, to)
-      ]);
-      setMedicines(medicinesResponse.medicines || []);
-      setAdherenceData(adherenceResponse);
+      
+      if (isDoctor) {
+        // Load aggregated analytics for all patients
+        const response = await doctorAPI.getAllPatientsAnalytics(from, to);
+        setAdherenceData({ daily: response.daily });
+        setPatientBreakdown(response.patientBreakdown || []);
+        setTotalPatients(response.totalPatients || 0);
+      } else {
+        // Load individual patient analytics
+        const [medicinesResponse, adherenceResponse] = await Promise.all([
+          medicineAPI.getAll(),
+          analyticsAPI.getAdherence(from, to)
+        ]);
+        setMedicines(medicinesResponse.medicines || []);
+        setAdherenceData(adherenceResponse);
+      }
     } catch (error) {
       console.error('Failed to load analytics:', error);
       
@@ -228,9 +248,128 @@ export default function Analytics() {
               </div>
               <div style={{ color: "var(--text-secondary)", fontSize: "0.9rem" }}>Adherence Rate</div>
             </div>
+
+            {isDoctor && (
+              <div className="card" style={{ 
+                padding: "20px",
+                background: "rgba(139, 92, 246, 0.1)",
+                border: "1px solid #8b5cf6"
+              }}>
+                <div style={{ fontSize: "2rem", marginBottom: "8px" }}>👥</div>
+                <div style={{ fontSize: "1.5rem", fontWeight: "600", color: "#8b5cf6" }}>
+                  {totalPatients}
+                </div>
+                <div style={{ color: "var(--text-secondary)", fontSize: "0.9rem" }}>Total Patients</div>
+              </div>
+            )}
           </div>
         )}
       </div>
+
+      {/* Patient Breakdown Table - Only for Doctors */}
+      {isDoctor && patientBreakdown.length > 0 && (
+        <div className="card" style={{ padding: "24px" }}>
+          <h3 style={{ color: "var(--text-primary)", marginBottom: "20px", fontSize: "1.5rem" }}>
+            👥 Patient Adherence Breakdown
+          </h3>
+          
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ 
+              width: "100%", 
+              borderCollapse: "collapse",
+              fontSize: "0.95rem"
+            }}>
+              <thead>
+                <tr style={{ 
+                  background: "var(--bg-secondary)",
+                  borderBottom: "2px solid var(--border-color)"
+                }}>
+                  <th style={{ padding: "12px", textAlign: "left", color: "var(--text-primary)" }}>Patient Name</th>
+                  <th style={{ padding: "12px", textAlign: "left", color: "var(--text-primary)" }}>Email</th>
+                  <th style={{ padding: "12px", textAlign: "center", color: "var(--text-primary)" }}>✅ Taken</th>
+                  <th style={{ padding: "12px", textAlign: "center", color: "var(--text-primary)" }}>❌ Missed</th>
+                  <th style={{ padding: "12px", textAlign: "center", color: "var(--text-primary)" }}>📊 Total</th>
+                  <th style={{ padding: "12px", textAlign: "center", color: "var(--text-primary)" }}>📈 Rate</th>
+                </tr>
+              </thead>
+              <tbody>
+                {patientBreakdown.map((patient, index) => (
+                  <tr 
+                    key={patient.patientId}
+                    style={{ 
+                      borderBottom: "1px solid var(--border-color)",
+                      background: index % 2 === 0 ? "transparent" : "var(--bg-secondary)"
+                    }}
+                  >
+                    <td style={{ padding: "12px", color: "var(--text-primary)" }}>
+                      {patient.patientName || 'Unknown'}
+                    </td>
+                    <td style={{ padding: "12px", color: "var(--text-secondary)" }}>
+                      {patient.patientEmail}
+                    </td>
+                    <td style={{ 
+                      padding: "12px", 
+                      textAlign: "center",
+                      color: "var(--accent-success)",
+                      fontWeight: "600"
+                    }}>
+                      {patient.taken}
+                    </td>
+                    <td style={{ 
+                      padding: "12px", 
+                      textAlign: "center",
+                      color: "var(--accent-danger)",
+                      fontWeight: "600"
+                    }}>
+                      {patient.missed}
+                    </td>
+                    <td style={{ 
+                      padding: "12px", 
+                      textAlign: "center",
+                      color: "var(--text-primary)",
+                      fontWeight: "600"
+                    }}>
+                      {patient.total}
+                    </td>
+                    <td style={{ 
+                      padding: "12px", 
+                      textAlign: "center"
+                    }}>
+                      <span style={{
+                        padding: "4px 12px",
+                        borderRadius: "12px",
+                        fontWeight: "600",
+                        background: patient.adherenceRate >= 80 
+                          ? "rgba(72, 219, 251, 0.2)" 
+                          : patient.adherenceRate >= 50 
+                          ? "rgba(255, 193, 7, 0.2)"
+                          : "rgba(255, 107, 107, 0.2)",
+                        color: patient.adherenceRate >= 80 
+                          ? "var(--accent-success)" 
+                          : patient.adherenceRate >= 50 
+                          ? "#ffc107"
+                          : "var(--accent-danger)"
+                      }}>
+                        {patient.adherenceRate}%
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {patientBreakdown.length === 0 && (
+            <div style={{ 
+              textAlign: "center", 
+              padding: "32px",
+              color: "var(--text-secondary)"
+            }}>
+              No patient data available for the selected date range
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

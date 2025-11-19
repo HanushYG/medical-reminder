@@ -15,7 +15,8 @@ const generateToken = (userId) => {
 // Register/Signup
 router.post('/signup', [
   body('email').isEmail().normalizeEmail(),
-  body('role').isIn(['patient', 'caregiver', 'doctor'])
+  body('role').isIn(['patient', 'caregiver', 'doctor']),
+  body('name').optional().trim()
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -23,7 +24,7 @@ router.post('/signup', [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { email, role } = req.body;
+    const { email, role, name } = req.body;
 
     // Check if user already exists
     const existingUser = await User.findByEmail(email);
@@ -31,10 +32,23 @@ router.post('/signup', [
       return res.status(400).json({ error: 'User already exists with this email' });
     }
 
+    // Parse name into first and last name
+    let firstName = '';
+    let lastName = '';
+    if (name) {
+      const nameParts = name.trim().split(' ');
+      firstName = nameParts[0] || '';
+      lastName = nameParts.slice(1).join(' ') || '';
+    }
+
     // Create new user
     const user = new User({
       email,
       role,
+      profile: {
+        firstName,
+        lastName
+      },
       lastLogin: new Date()
     });
 

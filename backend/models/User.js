@@ -94,16 +94,26 @@ userSchema.index({ isActive: 1 });
 
 // Virtual for full name
 userSchema.virtual('fullName').get(function() {
-  if (this.profile.firstName && this.profile.lastName) {
-    return `${this.profile.firstName} ${this.profile.lastName}`;
+  if (this.profile && this.profile.firstName) {
+    if (this.profile.lastName) {
+      return `${this.profile.firstName} ${this.profile.lastName}`;
+    }
+    return this.profile.firstName;
   }
-  return this.email;
+  // Extract name from email as fallback (e.g., "john.doe@gmail.com" -> "John Doe")
+  const emailName = this.email.split('@')[0];
+  const nameParts = emailName.split(/[._-]/);
+  return nameParts
+    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
 });
 
 // Instance methods
 userSchema.methods.toSafeObject = function() {
   const userObject = this.toObject();
   delete userObject.__v;
+  // Add fullName to the response
+  userObject.name = this.fullName;
   return userObject;
 };
 
@@ -117,3 +127,5 @@ userSchema.statics.findByRole = function(role) {
 };
 
 module.exports = mongoose.model('User', userSchema);
+
+
